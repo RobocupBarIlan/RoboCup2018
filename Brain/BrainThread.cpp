@@ -74,12 +74,12 @@ void *runBrain(void *arg) {
 	motion->StartEngines();
 	VisionThread::MillisSleep(3000);
 	cout << "StartEngines-> done" << endl;
-//	while (true) {
+	while (true) {
 //		motion->RunAction(ActionPage::RightSideKick);
 //		VisionThread::MillisSleep(3000);
 //		motion->RunAction(ActionPage::LeftSideKick);
 //		VisionThread::MillisSleep(3000);
-//	}
+	}
 
 	int center_x, center_y;
 	double distance;
@@ -373,6 +373,9 @@ void BrainThread::kick() {
 	VisionThread::MillisSleep(500);
 	Motion* motion = GetBrainThreadInstance()->getMotion();
 	cout << "kick function" << endl;
+	if(motion->GetHeadTilt().Pan < -5 || motion->GetHeadTilt().Pan > 5 ){
+
+	}
 	if (GetBrainThreadInstance()->getKick() == 1) {
 		motion->RunAction(ActionPage::LeftKick);
 	} else if (GetBrainThreadInstance()->getKick() == -1) {

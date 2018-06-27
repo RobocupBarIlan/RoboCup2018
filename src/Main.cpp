@@ -42,7 +42,7 @@ int main() {
 //	Motion* motion = BrainThread::GetBrainThreadInstance()->getMotion();
 //	motion->SetHeadTilt(HeadTilt(-5, -35));
 //	VisionThread::MillisSleep(3000);
-//	VisionThread::ScanCenterGoal();
+	VisionThread::ScanCenterGoal();
 
 //	Point center;
 //	int radius;

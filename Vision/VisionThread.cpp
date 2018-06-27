@@ -34,7 +34,7 @@ Mat VisionThread::FetchFrame()
 void VisionThread::ScanCenterGoal()
 {
 	IS_PROCCESSING_IMAGE=true;
-	pthread_kill(VisionThread::GetVisionThreadInstance()->getVisionThread(),NULL); //First send signal to the vision thread - which will trigger the GetBallCenterInFrameAndDistance() method.
+//	pthread_kill(VisionThread::GetVisionThreadInstance()->getVisionThread(),NULL); //First send signal to the vision thread - which will trigger the GetBallCenterInFrameAndDistance() method.
 
 	GoalCandidate gc;
 	GoalDetector gd;
@@ -43,20 +43,18 @@ void VisionThread::ScanCenterGoal()
 	int pan = -36; // Possible Pan range -36 to 35.
 	int hit_counter = 0;
 	int miss_counter = 0;
-	cout << "1"  << endl;
 	motion->SetHeadTilt(HeadTilt(-h, pan));
 	HeadTilt ht = motion->GetHeadTilt();
 	VisionThread::MillisSleep(2000);
-	cout << "2"  << endl;
 	bool is_found = false;
-
+	cout << "1" << endl;
 	Mat Field = FetchFrame(); // Change that with line that take only the goal area (convex).
-	while (pan <= 35)
+	while (pan <= 90)
 	{
 		cout << "Currently checking pan:" << pan << endl;
+		cout << "2" << endl;
 		gd.GetGoalPosts(gc, Field);
-		cout << "3"  << endl;
-
+		cout << "3" << endl;
 		if ((gc.m_width_left == 0 || gc.m_width_right == 0) || abs((gc.m_left_post[0].x+gc.m_left_post[1].x+gc.m_right_post[0].x+gc.m_right_post[1].x)/4 - Field.cols/2) > 70)
 		{
 			miss_counter++;
@@ -67,6 +65,7 @@ void VisionThread::ScanCenterGoal()
 			miss_counter = 0;
 			hit_counter++;
 		}
+		cout << "4" << endl;
 		if (miss_counter == 3)
 		{
 			int pixels_to_pan = 40;
@@ -77,12 +76,15 @@ void VisionThread::ScanCenterGoal()
 			motion->SetHeadTilt(HeadTilt(-h, pan));
 			miss_counter = 0;
 		}
+
 		if (hit_counter == 3)
 		{
 			is_found = true;
 			break;
 		}
-		waitKey(30);
+		cout << "5" << endl;
+//		waitKey(30);
+		cout << "6" << endl;
 	}
 	if (is_found/*pan <= 35*/)
 	{
@@ -93,6 +95,7 @@ void VisionThread::ScanCenterGoal()
 		cout << "Center of Goal not found!" << endl;
 	}
 	IS_PROCCESSING_IMAGE=false; //Must be added so the camera won't capture in parallel to us processing the previous frame.
+	cout << "7" << endl;
 }
 
 VisionThread::~VisionThread() {
