@@ -33,9 +33,9 @@ Mat VisionThread::FetchFrame()
 
 void VisionThread::ScanCenterGoal()
 {
-	while (	IS_PROCCESSING_IMAGE==true) {
-		cout << "proccessing image"  << endl;
-	}
+	IS_PROCCESSING_IMAGE=true;
+	pthread_kill(VisionThread::GetVisionThreadInstance()->getVisionThread(),NULL); //First send signal to the vision thread - which will trigger the GetBallCenterInFrameAndDistance() method.
+
 	GoalCandidate gc;
 	GoalDetector gd;
 	Motion* motion = BrainThread::GetBrainThreadInstance()->getMotion();
@@ -46,7 +46,7 @@ void VisionThread::ScanCenterGoal()
 	cout << "1"  << endl;
 	motion->SetHeadTilt(HeadTilt(-h, pan));
 	HeadTilt ht = motion->GetHeadTilt();
-	VisionThread::MillisSleep(3000);
+	VisionThread::MillisSleep(2000);
 	cout << "2"  << endl;
 	bool is_found = false;
 
@@ -54,7 +54,7 @@ void VisionThread::ScanCenterGoal()
 	while (pan <= 35)
 	{
 		cout << "Currently checking pan:" << pan << endl;
-//		gd.GetGoalPosts(gc, Field);
+		gd.GetGoalPosts(gc, Field);
 		cout << "3"  << endl;
 
 		if ((gc.m_width_left == 0 || gc.m_width_right == 0) || abs((gc.m_left_post[0].x+gc.m_left_post[1].x+gc.m_right_post[0].x+gc.m_right_post[1].x)/4 - Field.cols/2) > 70)
@@ -258,7 +258,6 @@ void VisionThread::GetBallCenterInFrameAndDistance()
 		Point center;
 		int radius;
 		BallDetector::GetBallCenter(center,radius);
-
 		WriteDetectedDataMutex.lock();
 			BallCenterX=center.x;
 			BallCenterY=center.y;
@@ -279,7 +278,6 @@ void VisionThread::SafeReadBallCenterInFrameAndDistance(int& center_x,int& cente
 	pthread_kill(VisionThread::GetVisionThreadInstance()->getVisionThread(),VisionThread::GET_BALL_CENTER_IN_FRAME_AND_DISTANCE); //First send signal to the vision thread - which will trigger the GetBallCenterInFrameAndDistance() method.
 
 	while(!Is_Ball_Writing_Done){}; //Wait until writing to variables done.
-
 	//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 	//Critical code section - reading the data - must lock for data consistency:
 	WriteDetectedDataMutex.lock();
@@ -293,7 +291,6 @@ void VisionThread::SafeReadBallCenterInFrameAndDistance(int& center_x,int& cente
 		Is_Ball_Writing_Done=false; //Disable safe read. Don't allow a reading before next write.
 	WriteDetectedDataMutex.unlock();
 	IS_PROCCESSING_IMAGE=false;
-
 	//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 }
 

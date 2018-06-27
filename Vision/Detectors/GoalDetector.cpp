@@ -4,39 +4,37 @@
 
 
 void GoalDetector::GetGoalPosts(GoalCandidate& gc, Mat Goal_area){
-	Mat frame,frame_hsv, frame_gray,original_field_mat, field_mat, whites_mat, field_space_mat, candidates_mat; //frame=origianl image. frame_hsv=image after transform to hsv. field_mat=only pixels in bounds of field's green after calibration are 0 (all the rest 255). whites_mat=only white pixels in image. field_space_mat=all pixels below bounding_horizontal_line (i.e -assumed to be field). candidates_mat=pixels which are not field and white and below bounding horizontal line.
+	Mat frame1,frame_hsv, frame_gray,original_field_mat, field_mat, whites_mat, field_space_mat, candidates_mat; //frame=origianl image. frame_hsv=image after transform to hsv. field_mat=only pixels in bounds of field's green after calibration are 0 (all the rest 255). whites_mat=only white pixels in image. field_space_mat=all pixels below bounding_horizontal_line (i.e -assumed to be field). candidates_mat=pixels which are not field and white and below bounding horizontal line.
 	Mat hsv_channels[NUM_CHANNELS]; //Will contain all 3 HSV channels splitted.
 	Mat bgr_channels[NUM_CHANNELS]; //Will contain all 3 BGR channels splitted.
 	uchar field_min_hue, field_max_hue; //Will mark which pixel is a field pixel after calib.
 	ushort bounding_horizontal_line;
-	cout << "01";
 	//frame = Goal_area.clone();
-	VisionThread::SafeReadeCapturedFrame(frame); // DELETE IN THE FUTURE.
+	VisionThread::SafeReadeCapturedFrame(frame1); // DELETE IN THE FUTURE.
 	//imshow("1", frame);
 
-	split(frame, bgr_channels); //Split to B,G,R channels so we can manipulate the image later on.
+	split(frame1, bgr_channels); //Split to B,G,R channels so we can manipulate the image later on.
 	//Reduce noise:
 	GaussianBlur(bgr_channels[0], bgr_channels[0], Size(3, 3), 2, 2);
 	GaussianBlur(bgr_channels[1], bgr_channels[1], Size(3, 3), 2, 2);
 	GaussianBlur(bgr_channels[2], bgr_channels[2], Size(3, 3), 2, 2);
-	merge(bgr_channels, NUM_CHANNELS, frame); //Merge the channels back to one matrix after manipulation.
+	merge(bgr_channels, NUM_CHANNELS, frame1); //Merge the channels back to one matrix after manipulation.
 	//imshow("2", frame);
 
 	int idx=0;
-	cvtColor(frame, frame_hsv, CV_BGR2HSV); //Convert original RGB representation to HSV representation.
+	cvtColor(frame1, frame_hsv, CV_BGR2HSV); //Convert original RGB representation to HSV representation.
 	//imshow("3", frame_hsv);
-cout << "4";
 	split(frame_hsv, hsv_channels); //Split to H,S,V channels so we can use the hue,saturation&value matrices more conviniently later on.
 	GoalDetector::FieldCalibration(hsv_channels[0], field_min_hue, field_max_hue);
 
-	field_mat = Mat::zeros(frame.rows, frame.cols, CV_8UC1); //Generate a 1-channel matrix with size of original image (unsigned char). set all pixels to initail value 255=(11111111)_2
-	whites_mat = Mat::zeros(frame.rows, frame.cols, CV_8UC1); //Generate a 1-channel matrix with size of original image (unsigned char).
+	field_mat = Mat::zeros(frame1.rows, frame1.cols, CV_8UC1); //Generate a 1-channel matrix with size of original image (unsigned char). set all pixels to initail value 255=(11111111)_2
+	whites_mat = Mat::zeros(frame1.rows, frame1.cols, CV_8UC1); //Generate a 1-channel matrix with size of original image (unsigned char).
 	//cout << (uint) field_min_hue << " " << (uint) field_max_hue << endl;
 
 	//Generate the field_mat and whites_mat:
-	for (int i = 0; i < frame.rows; i++)
+	for (int i = 0; i < frame1.rows; i++)
 	{
-		for (int j = 0; j < frame.cols; j++)
+		for (int j = 0; j < frame1.cols; j++)
 		{
 
 			//Check saturation& value against bounds:
@@ -54,7 +52,6 @@ cout << "4";
 	}
 	//imshow("4", whites_mat);
 	//imshow("5", field_mat);
-cout << "5";
 	// medianBlur(field_mat,field_mat,5);
 	// imshow("field_mat", field_mat);
 	//	imshow("whites_mat",whites_mat);
@@ -90,7 +87,6 @@ cout << "5";
 		}
 	}
 	//imshow("6", field_mat);
-	cout << "6";
 	Mat structure_element_ = getStructuringElement(MORPH_RECT, Size(2*STRUCTURE_ELEMENT_SIZE, 2*STRUCTURE_ELEMENT_SIZE));
 	dilate(field_mat, field_mat, structure_element_);
 	// imshow("field_mat", field_mat);
@@ -116,12 +112,12 @@ cout << "5";
 
 	//Because the bounding horizontal line may cut the bottom of the goal we add some 'insurance' extra pixels - 15% of frame- 72 pixels
 	//Generate field_space_mat=all pixels below bounding_horizontal_line (i.e -assumed to be field) are 255=(11111111)_2 and 0 else.
-	field_space_mat = Mat::zeros(frame.rows, frame.cols, CV_8UC1);
-	for (uint i = frame.rows - 1; i > 0; i--)
+	field_space_mat = Mat::zeros(frame1.rows, frame1.cols, CV_8UC1);
+	for (uint i = frame1.rows - 1; i > 0; i--)
 	{
 		if (i >= bounding_horizontal_line+BOUNDING_HORIZONTAL_LINE_FIX ) //If below bounding_horizontal_line minus the bounding horizontal fix (which lets a bit more pixels from the frame to enter the field_space_mat)
 		{
-			for (uint j = 0; j < frame.cols; j++) //Set all values to 255 there:
+			for (uint j = 0; j < frame1.cols; j++) //Set all values to 255 there:
 			{
 				field_space_mat.at<uchar>(i, j) = 255;
 			}
@@ -131,7 +127,6 @@ cout << "5";
 			break;
 		}
 	}
-	cout << "7";
 	bitwise_not(field_space_mat,field_space_mat);
 	//imshow("9", field_space_mat);
 
@@ -187,7 +182,6 @@ cout << "5";
 	//imshow("12", whites_mat_copy);
 	//imshow("corners", whites_mat_copy);
 	//waitKey(1);
-	cout << "8";
 	Mat candidate_i;
 	int corner_1_x,corner_1_y,corner_2_x,corner_2_y;
 	double slope;
@@ -499,7 +493,6 @@ cout << "5";
 			line(cdstP, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0,0,255), 3, LINE_AA);
 		}
 	}
-	cout << "9";
 //cout << "Before Cull: " << post_candidates.size() << endl;
 int pixels_distance = 11;
 	for(int i=0;i<post_candidates.size(); i++) //For every post conadidate found - choose the one with largest width first.
@@ -532,7 +525,7 @@ int pixels_distance = 11;
 		post_candidate_rect.height = post_candidates[i][1].y - post_candidates[i][0].y;
 		post_candidate_rect.width = post_candidates[i][1].x - post_candidates[i][0].x;
 		//cout << "Candidate: " << i << " Minimum_x: " << post_candidate_rect.x << " MInimum_y: " << post_candidate_rect.y << " Maximum_x: " << post_candidates[i][1].x << " Maximum_y: " << post_candidates[i][1].y << " Accuracy: " << post_candidates[i][2].x << endl;
-		rectangle(frame,post_candidate_rect,Scalar(0,255,0),2);
+		rectangle(frame1,post_candidate_rect,Scalar(0,255,0),2);
 	}
 
 	int max_dots_sampled=0;
@@ -582,13 +575,13 @@ int pixels_distance = 11;
 					right_post.y = post_candidates[index_of_max_width_candidate][0].y;
 					right_post.height=post_candidates[index_of_max_width_candidate][1].y - post_candidates[index_of_max_width_candidate][0].y;
 					right_post.width=post_candidates[index_of_max_width_candidate][1].x - post_candidates[index_of_max_width_candidate][0].x;
-					rectangle(frame,right_post,Scalar(255,0,0),2);
+					rectangle(frame1,right_post,Scalar(255,0,0),2);
 
 					left_post.x= post_candidates[index_of_second_max_width_candidate][0].x;
 					left_post.y = post_candidates[index_of_second_max_width_candidate][0].y;
 					left_post.height=post_candidates[index_of_second_max_width_candidate][1].y - post_candidates[index_of_second_max_width_candidate][0].y;
 					left_post.width=post_candidates[index_of_second_max_width_candidate][1].x - post_candidates[index_of_second_max_width_candidate][0].x;
-					rectangle(frame,left_post,Scalar(255,0,0),2);
+					rectangle(frame1,left_post,Scalar(255,0,0),2);
 			}
 			else
 			{
@@ -598,13 +591,13 @@ int pixels_distance = 11;
 				left_post.y = post_candidates[index_of_max_width_candidate][0].y;
 				left_post.height=post_candidates[index_of_max_width_candidate][1].y - post_candidates[index_of_max_width_candidate][0].y;
 				left_post.width=post_candidates[index_of_max_width_candidate][1].x - post_candidates[index_of_max_width_candidate][0].x;
-				rectangle(frame,left_post,Scalar(255,0,0),2);
+				rectangle(frame1,left_post,Scalar(255,0,0),2);
 
 				right_post.x= post_candidates[index_of_second_max_width_candidate][0].x;
 				right_post.y = post_candidates[index_of_second_max_width_candidate][0].y;
 				right_post.height=post_candidates[index_of_second_max_width_candidate][1].y - post_candidates[index_of_second_max_width_candidate][0].y;
 				right_post.width=post_candidates[index_of_second_max_width_candidate][1].x - post_candidates[index_of_second_max_width_candidate][0].x;
-				rectangle(frame,right_post,Scalar(255,0,0),2);
+				rectangle(frame1,right_post,Scalar(255,0,0),2);
 
 				gc=GoalCandidate(post_candidates[index_of_max_width_candidate],post_candidates[index_of_second_max_width_candidate]);
 			}
@@ -616,7 +609,7 @@ int pixels_distance = 11;
 			left_post.y = post_candidates[index_of_max_width_candidate][0].y;
 			left_post.height=post_candidates[index_of_max_width_candidate][1].y - post_candidates[index_of_max_width_candidate][0].y;
 			left_post.width=post_candidates[index_of_max_width_candidate][1].x - post_candidates[index_of_max_width_candidate][0].x;
-			rectangle(frame,left_post,Scalar(255,0,0),2);
+			rectangle(frame1,left_post,Scalar(255,0,0),2);
 
 			post_candidates.push_back(vector<Point>());
 			post_candidates[post_candidates.size()-1].push_back(Point(-1,-1));
@@ -633,14 +626,14 @@ int pixels_distance = 11;
 		gc=GoalCandidate(post_candidates[post_candidates.size()-1],post_candidates[post_candidates.size()-1]);
 	}
 
-	imshow("Detected Goal Posts", frame);
+//	imshow("Detected Goal Posts", frame1);
 	//imshow("goal_detector_frame",cdstP);
 
 
 	//imshow("sadfghjkjhgfd", goal_area);
 	//imshow("whites_mat_after_rect",whites_mat_clone);
 	//imshow("field_mat_after_rect",field_mat_clone);
-	waitKey(20);
+//	waitKey(1);
 
 }
 
