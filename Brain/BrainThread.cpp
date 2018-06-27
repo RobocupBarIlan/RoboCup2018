@@ -74,12 +74,12 @@ void *runBrain(void *arg) {
 	motion->StartEngines();
 	VisionThread::MillisSleep(3000);
 	cout << "StartEngines-> done" << endl;
-	while (true) {
-//		motion->RunAction(ActionPage::RightSideKick);
-//		VisionThread::MillisSleep(3000);
-//		motion->RunAction(ActionPage::LeftSideKick);
-//		VisionThread::MillisSleep(3000);
-	}
+//	while (true) {
+////		motion->RunAction(ActionPage::RightSideKick);
+////		VisionThread::MillisSleep(3000);
+////		motion->RunAction(ActionPage::LeftSideKick);
+////		VisionThread::MillisSleep(3000);
+//	}
 
 	int center_x, center_y;
 	double distance;
@@ -373,13 +373,23 @@ void BrainThread::kick() {
 	VisionThread::MillisSleep(500);
 	Motion* motion = GetBrainThreadInstance()->getMotion();
 	cout << "kick function" << endl;
-	if(motion->GetHeadTilt().Pan < -5 || motion->GetHeadTilt().Pan > 5 ){
-
+	cout << motion->GetHeadTilt().Pan << endl;
+	if (motion->GetHeadTilt().Pan < -27 || motion->GetHeadTilt().Pan > 27) {
+		if (GetBrainThreadInstance()->getKick() == 1) {
+			motion->RunAction(ActionPage::LeftSideKick);
+		} else if (GetBrainThreadInstance()->getKick() == -1) {
+			motion->RunAction(ActionPage::RightSideKick);
+		}
 	}
-	if (GetBrainThreadInstance()->getKick() == 1) {
-		motion->RunAction(ActionPage::LeftKick);
-	} else if (GetBrainThreadInstance()->getKick() == -1) {
-		motion->RunAction(ActionPage::RightKick);
+//	if(motion->GetHeadTilt().Pan < -5 || motion->GetHeadTilt().Pan > 5 ){
+//
+//	}
+	else {
+		if (GetBrainThreadInstance()->getKick() == 1) {
+			motion->RunAction(ActionPage::LeftKick);
+		} else if (GetBrainThreadInstance()->getKick() == -1) {
+			motion->RunAction(ActionPage::RightKick);
+		}
 	}
 	GetBrainThreadInstance()->setState(LOOK_FOR_BALL_STATE);
 	VisionThread::MillisSleep(1500);
@@ -465,7 +475,7 @@ void BrainThread::followBall() {
 			m_continue_center_thread = 0;
 			WriteDetectedDataMutexBrainCenter.unlock();
 			cout << "setting look for ball state" << endl;
-			GetBrainThreadInstance()->setState(LOOK_FOR_GOAL_STATE);
+			GetBrainThreadInstance()->setState(LOOK_FOR_BALL_STATE);
 			VisionThread::MillisSleep(100);
 			return;
 		}

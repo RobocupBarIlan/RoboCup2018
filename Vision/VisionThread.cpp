@@ -40,9 +40,8 @@ void VisionThread::ScanCenterGoal()
 	GoalDetector gd;
 	Motion* motion = BrainThread::GetBrainThreadInstance()->getMotion();
 	int h = -10+5;
-	int pan = -36; // Possible Pan range -36 to 35.
-	int hit_counter = 0;
-	int miss_counter = 0;
+	int pan = -89; // Possible Pan range -90 to 90.
+	int miss_counter = 0,hit_counter=0;
 	motion->SetHeadTilt(HeadTilt(-h, pan));
 	HeadTilt ht = motion->GetHeadTilt();
 	VisionThread::MillisSleep(2000);
